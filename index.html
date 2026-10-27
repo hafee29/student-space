@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Student Space</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#f3f5fa;--card:#fff;--ink:#1c2340;--mute:#6a7391;--line:#e1e5f0;--acc:#4b57d6;--acc2:#e8eaff;--ok:#1fa97c;--warn:#e9a02e;--bad:#d9475c;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12162b;--card:#1b2140;--ink:#e9ecfa;--mute:#98a1c4;--line:#2b3358;--acc:#8c97ff;--acc2:#262d5a;--ok:#4fd1a1;--warn:#f2b552;--bad:#ff7d90;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12162b;--card:#1b2140;--ink:#e9ecfa;--mute:#98a1c4;--line:#2b3358;--acc:#8c97ff;--acc2:#262d5a;--ok:#4fd1a1;--warn:#f2b552;--bad:#ff7d90;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+nav{padding:24px 14px;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
+.logo{font-weight:800;font-size:20px;letter-spacing:-.02em;padding:0 10px 18px}
+.logo i{font-style:normal;color:var(--acc)}
+nav button{all:unset;cursor:pointer;padding:9px 12px;border-radius:10px;color:var(--mute);font-weight:600}
+nav button:hover{background:var(--acc2)}
+nav button.on{background:var(--acc);color:#fff}
+nav .sp{flex:1}
+main{padding:28px;max-width:960px;width:100%}
+h1{font-size:30px;letter-spacing:-.03em;margin:0 0 4px;font-weight:800}
+.sub{color:var(--mute);margin:0 0 22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+h2{font-size:16px;margin:0 0 12px;font-weight:600}
+input,select,textarea,.btn{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+textarea{width:100%;min-height:170px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.btn{cursor:pointer;background:var(--acc);color:#fff;border:0;font-weight:600}
+.btn.ghost{background:var(--acc2);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row input[type=text]{flex:1;min-width:160px}
+.chips{display:flex;gap:6px;margin:14px 0 6px;flex-wrap:wrap}
+.chip{all:unset;cursor:pointer;padding:4px 12px;border-radius:99px;border:1px solid var(--line);color:var(--mute);font-size:13px}
+.chip.on{background:var(--acc2);color:var(--ink);border-color:var(--acc)}
+ul{list-style:none;margin:0;padding:0}
+.task{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.task:first-child{border-top:0}
+.chk{all:unset;cursor:pointer;width:22px;height:22px;border:2px solid var(--mute);border-radius:7px;display:grid;place-items:center;font-size:13px;color:#fff;flex:none}
+.done .chk{background:var(--ok);border-color:var(--ok)}
+.done .tt{text-decoration:line-through;color:var(--mute)}
+.tt{flex:1;word-break:break-word}
+.tag{font-size:12px;padding:1px 8px;border-radius:99px;border:1px solid currentColor}
+.p0{color:var(--ok)}.p1{color:var(--warn)}.p2{color:var(--bad)}
+.due{font-size:12px;color:var(--mute);white-space:nowrap}.due.over{color:var(--bad);font-weight:600}
+.x{all:unset;cursor:pointer;color:var(--mute);padding:2px 6px}.x:hover{color:var(--bad)}
+.top{display:flex;gap:18px;align-items:center}
+.top svg{flex:none}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .h{font-size:12px;color:var(--mute);text-align:center;padding:4px 0}
+.day{all:unset;cursor:pointer;aspect-ratio:1/.85;border:1px solid var(--line);border-radius:10px;padding:5px 7px;display:flex;flex-direction:column;justify-content:space-between;background:var(--card)}
+.day:hover{border-color:var(--acc)}
+.day.t{border-color:var(--acc);font-weight:800}
+.day.s{background:var(--acc);color:#fff}
+.day.m{opacity:.35}
+.dots{display:flex;gap:3px}.dots b{width:7px;height:7px;border-radius:50%}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.stat b{display:block;font-size:28px;letter-spacing:-.03em}
+.stat span{color:var(--mute);font-size:13px}
+.bar{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+.bar div{height:10px;border-radius:5px;min-width:3px}
+.moods{display:flex;gap:6px;margin-bottom:10px}
+.moods button{all:unset;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;border:2px solid transparent}
+.moods button.on{border-color:var(--acc);background:var(--acc2)}
+.empty{color:var(--mute);padding:8px 0}
+.ent{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.ent small{color:var(--mute)}
+#toast{position:fixed;right:16px;top:calc(16px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:8px;z-index:9}
+#toast div{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;max-width:300px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+@media(max-width:720px){.app{grid-template-columns:1fr}nav{position:sticky;top:0;height:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);background:var(--bg);z-index:5;padding:10px}.logo,nav .sp{display:none}nav button{white-space:nowrap}main{padding:18px}.grid2{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.day{padding:3px 4px;font-size:13px}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav id="nav"></nav>
+<main id="main"></main>
+</div>
+<div id="toast" aria-live="polite"></div>
+<script>
+const $=s=>document.querySelector(s);
+const def=()=>({tasks:[],diary:{},rem:[]});
+let S;try{S=JSON.parse(localStorage.getItem('studentspace1'))||def()}catch(e){S=def()}
+const save=()=>{try{localStorage.setItem('studentspace1',JSON.stringify(S))}catch(e){}};
+const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
+const today=iso(new Date());
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=d=>d?new Date(d+'T00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'No date';
+const PN=['Low','Medium','High'],MOODS=['😞','😕','😐','🙂','😄'];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+let view='tasks',filter='all',sel=today,cur=new Date(),mood=null;
+const TABS=[['tasks','Tasks'],['cal','Calendar'],['diary','Diary'],['rem','Reminders'],['stats','Statistics']];
+
+function taskLi(t){const over=!t.done&&t.d&&t.d<today;
+return `<li class="task ${t.done?'done':''}"><button class="chk" data-a="tog" data-id="${t.id}" aria-label="Toggle complete">${t.done?'✓':''}</button><span class="tt">${esc(t.t)}</span><span class="tag p${t.p}">${PN[t.p]}</span><span class="due ${over?'over':''}">${fmt(t.d)}</span><button class="x" data-a="del" data-id="${t.id}" aria-label="Delete task">✕</button></li>`}
+
+const V={
+tasks(){
+ const td=S.tasks.filter(t=>t.d===today),dn=td.filter(t=>t.done).length,pc=td.length?dn/td.length:0;
+ const ts=S.tasks.filter(t=>filter==='all'||(filter==='today'&&t.d===today)||(filter==='open'&&!t.done)||(filter==='done'&&t.done)).sort((a,b)=>(a.done-b.done)||(a.d||'9').localeCompare(b.d||'9')||b.p-a.p);
+ const h=new Date().getHours(),g=h<12?'Good morning':h<18?'Good afternoon':'Good evening';
+ return `<h1>${g}</h1><p class="sub">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</p>
+ <div class="card top"><svg width="84" height="84" viewBox="0 0 84 84"><circle cx="42" cy="42" r="34" fill="none" stroke="var(--line)" stroke-width="9"/><circle cx="42" cy="42" r="34" fill="none" stroke="var(--ok)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(213.6*pc).toFixed(1)} 214" transform="rotate(-90 42 42)"/><text x="42" y="47" text-anchor="middle" fill="currentColor" font-size="16" font-weight="800">${Math.round(pc*100)}%</text></svg><div><h2>Today’s progress</h2><span class="sub">${td.length?`${dn} of ${td.length} tasks done`:'No tasks due today yet. Add one below.'}</span></div></div>
+ <div class="card"><h2>Add a task</h2><form id="fTask" class="row"><input type="text" id="tt" placeholder="e.g. Finish SRS document" required maxlength="120"><input type="date" id="td" value="${today}"><select id="tp"><option value="0">Low</option><option value="1" selected>Medium</option><option value="2">High</option></select><button class="btn">Add task</button></form>
+ <div class="chips">${[['all','All'],['today','Today'],['open','Pending'],['done','Completed']].map(f=>`<button class="chip ${filter===f[0]?'on':''}" data-a="flt" data-id="${f[0]}">${f[1]}</button>`).join('')}</div>
+ <ul>${ts.map(taskLi).join('')||'<li class="empty">Nothing here. Add a task to get started.</li>'}</ul></div>`},
+cal(){
+ const y=cur.getFullYear(),m=cur.getMonth(),first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate();
+ let cells=['S','M','T','W','T','F','S'].map(d=>`<div class="h">${d}</div>`).join('');
+ for(let i=0;i<first;i++)cells+='<span></span>';
+ for(let d=1;d<=n;d++){const k=iso(new Date(y,m,d));
+  const dots=(S.tasks.some(t=>t.d===k)?'<b style="background:var(--acc)"></b>':'')+(S.diary[k]?'<b style="background:var(--ok)"></b>':'')+(S.rem.some(r=>r.d===k)?'<b style="background:var(--warn)"></b>':'');
+  cells+=`<button class="day ${k===today?'t':''} ${k===sel?'s':''}" data-a="sel" data-id="${k}">${d}<span class="dots">${dots}</span></button>`}
+ const ts=S.tasks.filter(t=>t.d===sel),rs=S.rem.filter(r=>r.d===sel).sort((a,b)=>a.time.localeCompare(b.time));
+ return `<h1>Calendar</h1><p class="sub">Plan every day. Blue = tasks, green = diary, amber = reminders.</p>
+ <div class="grid2"><div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><button class="btn ghost" data-a="mo" data-id="-1" aria-label="Previous month">‹</button><h2 style="margin:0">${cur.toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</h2><button class="btn ghost" data-a="mo" data-id="1" aria-label="Next month">›</button></div><div class="cal">${cells}</div></div>
+ <div class="card"><h2>${new Date(sel+'T00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})}</h2>
+ <form id="fCal" class="row"><input type="text" id="ct" placeholder="Add task for this day" required maxlength="120"><button class="btn">Add</button></form>
+ <ul style="margin-top:8px">${ts.map(taskLi).join('')||'<li class="empty">No tasks this day.</li>'}</ul>
+ ${rs.map(r=>`<p>⏰ ${r.time} · ${esc(r.t)}</p>`).join('')}
+ <button class="btn ghost" data-a="goDiary">${S.diary[sel]?'Open diary entry':'Write diary entry'}</button></div></div>`},
+diary(){
+ const e=S.diary[sel]||{text:'',mood:null};mood=e.mood;
+ const all=Object.keys(S.diary).sort().reverse();
+ return `<h1>Diary</h1><p class="sub">A private space for each day. Saved on this device.</p>
+ <div class="card"><div class="row" style="margin-bottom:10px"><input type="date" id="dd" value="${sel}"><span class="sub" style="margin:0">How was your day?</span></div>
+ <div class="moods">${MOODS.map((m,i)=>`<button class="${e.mood===i?'on':''}" data-a="mood" data-id="${i}" aria-label="Mood ${i+1} of 5">${m}</button>`).join('')}</div>
+ <textarea id="dt" placeholder="What happened today? What did you learn?">${esc(e.text)}</textarea>
+ <div class="row" style="margin-top:10px"><button class="btn" data-a="saveD">Save entry</button><button class="btn ghost" data-a="delD">Delete entry</button></div></div>
+ <div class="card"><h2>Past entries</h2>${all.map(k=>`<div class="ent" data-a="openD" data-id="${k}"><b>${fmt(k)}</b> ${S.diary[k].mood!=null?MOODS[S.diary[k].mood]:''}<br><small>${esc(S.diary[k].text.slice(0,90))}</small></div>`).join('')||'<div class="empty">No entries yet.</div>'}</div>`},
+rem(){
+ const rs=[...S.rem].sort((a,b)=>(a.d+a.time).localeCompare(b.d+b.time));
+ const np=('Notification' in window)?Notification.permission:'denied';
+ return `<h1>Reminders</h1><p class="sub">You’ll get an alert while this page is open.</p>
+ <div class="card"><h2>New reminder</h2><form id="fRem" class="row"><input type="text" id="rt" placeholder="e.g. Submit lab record" required maxlength="100"><input type="date" id="rd" value="${today}" required><input type="time" id="rm" required><button class="btn">Set reminder</button></form>
+ ${np==='default'?'<p><button class="btn ghost" data-a="notif">Turn on browser notifications</button></p>':''}</div>
+ <div class="card"><h2>Upcoming and past</h2><ul>${rs.map(r=>`<li class="task ${r.fired?'done':''}"><span class="tt">${esc(r.t)}</span><span class="due">${fmt(r.d)} · ${r.time}</span><button class="x" data-a="delR" data-id="${r.id}" aria-label="Delete reminder">✕</button></li>`).join('')||'<li class="empty">No reminders set.</li>'}</ul></div>`},
+stats(){
+ const T=S.tasks,dn=T.filter(t=>t.done),days=[];
+ for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=iso(d);days.push({k,l:d.toLocaleDateString('en-IN',{weekday:'short'}),c:T.filter(t=>t.doneOn===k).length})}
+ let st=0,d=new Date();if(!T.some(t=>t.doneOn===iso(d)))d.setDate(d.getDate()-1);
+ while(T.some(t=>t.doneOn===iso(d))){st++;d.setDate(d.getDate()-1)}
+ const mx=Math.max(1,...days.map(x=>x.c)),over=T.filter(t=>!t.done&&t.d&&t.d<today).length;
+ const bars=days.map((x,i)=>{const h=x.c/mx*110;return `<rect x="${i*52+10}" y="${130-h}" width="34" height="${h}" rx="6" fill="var(--acc)"/><text x="${i*52+27}" y="${124-h}" text-anchor="middle" fill="currentColor" font-size="12">${x.c||''}</text><text x="${i*52+27}" y="148" text-anchor="middle" fill="var(--mute)" font-size="12">${x.l}</text>`}).join('');
+ const pr=[2,1,0].map(p=>{const a=T.filter(t=>t.p===p),b=a.filter(t=>t.done).length;return `<div class="bar"><span style="width:60px">${PN[p]}</span><div style="width:${a.length?b/a.length*100:0}%;background:var(--ok)"></div><span>${b}/${a.length}</span></div>`}).join('');
+ const mc=MOODS.map((m,i)=>`<span style="margin-right:12px">${m} ${Object.values(S.diary).filter(e=>e.mood===i).length}</span>`).join('');
+ return `<h1>Statistics</h1><p class="sub">See how your study habits are going.</p>
+ <div class="stats"><div class="stat"><b>${dn.length}</b><span>Tasks completed</span></div><div class="stat"><b>${T.length?Math.round(dn.length/T.length*100):0}%</b><span>Completion rate</span></div><div class="stat"><b>${st}</b><span>Day streak</span></div><div class="stat"><b style="color:${over?'var(--bad)':'inherit'}">${over}</b><span>Overdue</span></div></div>
+ <div class="card"><h2>Completed in the last 7 days</h2><svg viewBox="0 0 370 156" width="100%" role="img" aria-label="Bar chart of tasks completed per day">${bars}</svg></div>
+ <div class="grid2"><div class="card"><h2>Completion by priority</h2>${pr}</div><div class="card"><h2>Diary moods</h2><p>${mc}</p><span class="sub">${Object.keys(S.diary).length} entries written</span></div></div>`}
+};
+
+function R(){
+ $('#nav').innerHTML='<div class="logo">Student<i>Space</i></div>'+TABS.map(t=>`<button class="${view===t[0]?'on':''}" data-a="go" data-id="${t[0]}">${t[1]}</button>`).join('')+'<span class="sp"></span><button data-a="theme">Switch theme</button>';
+ $('#main').innerHTML=V[view]();
+}
+function toast(m){const d=document.createElement('div');d.textContent=m;$('#toast').appendChild(d);setTimeout(()=>d.remove(),8000)}
+
+const A={
+ go:id=>{view=id;R()},
+ theme:()=>{const r=document.documentElement,dk=getComputedStyle(r).colorScheme==='dark';r.dataset.theme=dk?'light':'dark'},
+ tog:id=>{const t=S.tasks.find(x=>x.id===id);t.done=!t.done;t.doneOn=t.done?today:null;save();R()},
+ del:id=>{S.tasks=S.tasks.filter(x=>x.id!==id);save();R()},
+ flt:id=>{filter=id;R()},
+ sel:id=>{sel=id;R()},
+ mo:id=>{cur=new Date(cur.getFullYear(),cur.getMonth()+ +id,1);R()},
+ goDiary:()=>{view='diary';R()},
+ mood:id=>{mood=+id;document.querySelectorAll('.moods button').forEach((b,i)=>b.classList.toggle('on',i===mood))},
+ saveD:()=>{const t=$('#dt').value.trim();if(!t&&mood==null){toast('Write something or pick a mood first.');return}S.diary[sel]={text:t,mood};save();toast('Diary entry saved.');R()},
+ delD:()=>{delete S.diary[sel];save();R()},
+ openD:id=>{sel=id;R();window.scrollTo(0,0)},
+ delR:id=>{S.rem=S.rem.filter(x=>x.id!==id);save();R()},
+ notif:()=>{Notification.requestPermission().then(R)}
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset.id)});
+document.addEventListener('change',e=>{if(e.target.id==='dd'&&e.target.value){sel=e.target.value;R()}});
+document.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
+ if(id==='fTask'){S.tasks.push({id:uid(),t:$('#tt').value.trim(),d:$('#td').value,p:+$('#tp').value,done:false,doneOn:null});save();R()}
+ if(id==='fCal'){S.tasks.push({id:uid(),t:$('#ct').value.trim(),d:sel,p:1,done:false,doneOn:null});save();R()}
+ if(id==='fRem'){S.rem.push({id:uid(),t:$('#rt').value.trim(),d:$('#rd').value,time:$('#rm').value,fired:false});save();toast('Reminder set.');R()}
+});
+function check(){const now=iso(new Date())+' '+new Date().toTimeString().slice(0,5);let ch=false;
+ S.rem.forEach(r=>{if(!r.fired&&(r.d+' '+r.time)<=now){r.fired=true;ch=true;toast('⏰ '+r.t);try{if('Notification' in window&&Notification.permission==='granted')new Notification('Student Space',{body:r.t})}catch(e){}}});
+ if(ch){save();if(view==='rem')R()}}
+setInterval(check,20000);check();R();
+</script>
+</body>
+</html>
