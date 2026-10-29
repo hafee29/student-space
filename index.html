@@ -69,6 +69,14 @@ ul{list-style:none;margin:0;padding:0}
 .empty{color:var(--mute);padding:8px 0}
 .ent{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
 .ent small{color:var(--mute)}
+.hrow{display:grid;grid-template-columns:minmax(80px,1fr) repeat(7,34px) 52px 26px;gap:6px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.hhead{border-top:0;color:var(--mute);font-size:12px;text-align:center;line-height:1.2}
+.hd.tn{color:var(--acc);font-weight:800}
+.hc{all:unset;cursor:pointer;width:30px;height:30px;border-radius:9px;border:2px solid var(--line);display:grid;place-items:center;color:#fff;margin:auto}
+.hc.on{background:var(--ok);border-color:var(--ok)}
+.hs{font-size:13px;text-align:center}
+@media(max-width:720px){.hrow{grid-template-columns:minmax(60px,1fr) repeat(7,28px) 40px 20px;gap:3px}.hc{width:26px;height:26px}}
+.app.lg{grid-template-columns:1fr}.app.lg nav{display:none}
 #toast{position:fixed;right:16px;top:calc(16px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:8px;z-index:9}
 #toast div{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;max-width:300px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 @media(max-width:720px){.app{grid-template-columns:1fr}nav{position:sticky;top:0;height:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);background:var(--bg);z-index:5;padding:10px}.logo,nav .sp{display:none}nav button{white-space:nowrap}main{padding:18px}.grid2{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.day{padding:3px 4px;font-size:13px}}
@@ -80,11 +88,15 @@ ul{list-style:none;margin:0;padding:0}
 <main id="main"></main>
 </div>
 <div id="toast" aria-live="polite"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-const def=()=>({tasks:[],diary:{},rem:[]});
+const def=()=>({tasks:[],diary:{},rem:[],habits:[]});
 let S;try{S=JSON.parse(localStorage.getItem('studentspace1'))||def()}catch(e){S=def()}
-const save=()=>{try{localStorage.setItem('studentspace1',JSON.stringify(S))}catch(e){}};
+S.habits=S.habits||[];
+const save=()=>{try{localStorage.setItem('studentspace1',JSON.stringify(S))}catch(e){}cloudSave()};
 const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
 const today=iso(new Date());
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -92,11 +104,14 @@ const fmt=d=>d?new Date(d+'T00:00').toLocaleDateString('en-IN',{day:'numeric',mo
 const PN=['Low','Medium','High'],MOODS=['😞','😕','😐','🙂','😄'];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 let view='tasks',filter='all',sel=today,cur=new Date(),mood=null;
-const TABS=[['tasks','Tasks'],['cal','Calendar'],['diary','Diary'],['rem','Reminders'],['stats','Statistics']];
+const TABS=[['tasks','Tasks'],['cal','Calendar'],['habits','Habits'],['diary','Diary'],['rem','Reminders'],['stats','Statistics']];
 
 function taskLi(t){const over=!t.done&&t.d&&t.d<today;
 return `<li class="task ${t.done?'done':''}"><button class="chk" data-a="tog" data-id="${t.id}" aria-label="Toggle complete">${t.done?'✓':''}</button><span class="tt">${esc(t.t)}</span><span class="tag p${t.p}">${PN[t.p]}</span><span class="due ${over?'over':''}">${fmt(t.d)}</span><button class="x" data-a="del" data-id="${t.id}" aria-label="Delete task">✕</button></li>`}
 
+const hStreak=h=>{let d=new Date();if(!h.log[iso(d)])d.setDate(d.getDate()-1);let n=0;while(h.log[iso(d)]){n++;d.setDate(d.getDate()-1)}return n};
+const hPct=h=>{let c=0;for(let i=0;i<30;i++){const d=new Date();d.setDate(d.getDate()-i);if(h.log[iso(d)])c++}return Math.round(c/30*100)};
+const habBars=()=>S.habits.map(h=>`<div class="bar"><span style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.n)}</span><div style="width:${hPct(h)*.6}%;background:var(--acc)"></div><span>${hPct(h)}%</span></div>`).join('')||'<div class="empty">Add habits to see consistency.</div>';
 const V={
 tasks(){
  const td=S.tasks.filter(t=>t.d===today),dn=td.filter(t=>t.done).length,pc=td.length?dn/td.length:0;
@@ -138,6 +153,13 @@ rem(){
  <div class="card"><h2>New reminder</h2><form id="fRem" class="row"><input type="text" id="rt" placeholder="e.g. Submit lab record" required maxlength="100"><input type="date" id="rd" value="${today}" required><input type="time" id="rm" required><button class="btn">Set reminder</button></form>
  ${np==='default'?'<p><button class="btn ghost" data-a="notif">Turn on browser notifications</button></p>':''}</div>
  <div class="card"><h2>Upcoming and past</h2><ul>${rs.map(r=>`<li class="task ${r.fired?'done':''}"><span class="tt">${esc(r.t)}</span><span class="due">${fmt(r.d)} · ${r.time}</span><button class="x" data-a="delR" data-id="${r.id}" aria-label="Delete reminder">✕</button></li>`).join('')||'<li class="empty">No reminders set.</li>'}</ul></div>`},
+habits(){
+ const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push({k:iso(d),l:d.toLocaleDateString('en-IN',{weekday:'narrow'}),n:d.getDate()})}
+ const dn=S.habits.filter(h=>h.log[today]).length;
+ return `<h1>Habits</h1><p class="sub">${S.habits.length?`${dn} of ${S.habits.length} habits done today`:'Build routines one day at a time.'}</p>
+ <div class="card"><h2>New habit</h2><form id="fHab" class="row"><input type="text" id="hn" placeholder="e.g. Read 20 pages" required maxlength="60"><button class="btn">Add habit</button></form></div>
+ <div class="card"><div class="hrow hhead"><span></span>${days.map(d=>`<span class="hd ${d.k===today?'tn':''}">${d.l}<br>${d.n}</span>`).join('')}<span class="hs">Streak</span><span></span></div>
+ ${S.habits.map(h=>`<div class="hrow"><span class="tt">${esc(h.n)}</span>${days.map(d=>`<button class="hc ${h.log[d.k]?'on':''}" data-a="htog" data-id="${h.id}|${d.k}" aria-label="${esc(h.n)} on ${d.k}">${h.log[d.k]?'✓':''}</button>`).join('')}<span class="hs">🔥 ${hStreak(h)}</span><button class="x" data-a="hdel" data-id="${h.id}" aria-label="Delete habit">✕</button></div>`).join('')||'<div class="empty">No habits yet. Add your first one above.</div>'}</div>`},
 stats(){
  const T=S.tasks,dn=T.filter(t=>t.done),days=[];
  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=iso(d);days.push({k,l:d.toLocaleDateString('en-IN',{weekday:'short'}),c:T.filter(t=>t.doneOn===k).length})}
@@ -150,11 +172,14 @@ stats(){
  return `<h1>Statistics</h1><p class="sub">See how your study habits are going.</p>
  <div class="stats"><div class="stat"><b>${dn.length}</b><span>Tasks completed</span></div><div class="stat"><b>${T.length?Math.round(dn.length/T.length*100):0}%</b><span>Completion rate</span></div><div class="stat"><b>${st}</b><span>Day streak</span></div><div class="stat"><b style="color:${over?'var(--bad)':'inherit'}">${over}</b><span>Overdue</span></div></div>
  <div class="card"><h2>Completed in the last 7 days</h2><svg viewBox="0 0 370 156" width="100%" role="img" aria-label="Bar chart of tasks completed per day">${bars}</svg></div>
- <div class="grid2"><div class="card"><h2>Completion by priority</h2>${pr}</div><div class="card"><h2>Diary moods</h2><p>${mc}</p><span class="sub">${Object.keys(S.diary).length} entries written</span></div></div>`}
+ <div class="grid2"><div class="card"><h2>Completion by priority</h2>${pr}</div><div class="card"><h2>Diary moods</h2><p>${mc}</p><span class="sub">${Object.keys(S.diary).length} entries written</span></div></div>
+ <div class="card"><h2>Habit consistency (last 30 days)</h2>${habBars()}</div>`}
 };
 
 function R(){
- $('#nav').innerHTML='<div class="logo">Student<i>Space</i></div>'+TABS.map(t=>`<button class="${view===t[0]?'on':''}" data-a="go" data-id="${t[0]}">${t[1]}</button>`).join('')+'<span class="sp"></span><button data-a="theme">Switch theme</button>';
+ if(CLOUD&&!USER){loginView();return}
+ $('.app').classList.remove('lg');
+ $('#nav').innerHTML='<div class="logo">Student<i>Space</i></div>'+TABS.map(t=>`<button class="${view===t[0]?'on':''}" data-a="go" data-id="${t[0]}">${t[1]}</button>`).join('')+'<span class="sp"></span><button data-a="theme">Switch theme</button>'+(USER?'<button data-a="logout">Log out</button>':'');
  $('#main').innerHTML=V[view]();
 }
 function toast(m){const d=document.createElement('div');d.textContent=m;$('#toast').appendChild(d);setTimeout(()=>d.remove(),8000)}
@@ -172,20 +197,48 @@ const A={
  saveD:()=>{const t=$('#dt').value.trim();if(!t&&mood==null){toast('Write something or pick a mood first.');return}S.diary[sel]={text:t,mood};save();toast('Diary entry saved.');R()},
  delD:()=>{delete S.diary[sel];save();R()},
  openD:id=>{sel=id;R();window.scrollTo(0,0)},
+ google:()=>au.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(x=>{msg=x.message;R()}),
+ logout:()=>{try{localStorage.removeItem('studentspace1')}catch(e){}S=def();au.signOut()},
  delR:id=>{S.rem=S.rem.filter(x=>x.id!==id);save();R()},
+ htog:id=>{const[i,k]=id.split('|');const h=S.habits.find(x=>x.id===i);if(h.log[k])delete h.log[k];else h.log[k]=1;save();R()},
+ hdel:id=>{S.habits=S.habits.filter(x=>x.id!==id);save();R()},
  notif:()=>{Notification.requestPermission().then(R)}
 };
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset.id)});
 document.addEventListener('change',e=>{if(e.target.id==='dd'&&e.target.value){sel=e.target.value;R()}});
 document.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
+ if(id==='fLogin'){const em=$('#le').value.trim(),pw=$('#lp').value,up=e.submitter&&e.submitter.dataset.mode==='up';
+  (up?au.createUserWithEmailAndPassword(em,pw):au.signInWithEmailAndPassword(em,pw)).catch(x=>{msg=x.message;R()})}
  if(id==='fTask'){S.tasks.push({id:uid(),t:$('#tt').value.trim(),d:$('#td').value,p:+$('#tp').value,done:false,doneOn:null});save();R()}
  if(id==='fCal'){S.tasks.push({id:uid(),t:$('#ct').value.trim(),d:sel,p:1,done:false,doneOn:null});save();R()}
+ if(id==='fHab'){S.habits.push({id:uid(),n:$('#hn').value.trim(),log:{}});save();R()}
  if(id==='fRem'){S.rem.push({id:uid(),t:$('#rt').value.trim(),d:$('#rd').value,time:$('#rm').value,fired:false});save();toast('Reminder set.');R()}
 });
 function check(){const now=iso(new Date())+' '+new Date().toTimeString().slice(0,5);let ch=false;
  S.rem.forEach(r=>{if(!r.fired&&(r.d+' '+r.time)<=now){r.fired=true;ch=true;toast('⏰ '+r.t);try{if('Notification' in window&&Notification.permission==='granted')new Notification('Student Space',{body:r.t})}catch(e){}}});
  if(ch){save();if(view==='rem')R()}}
-setInterval(check,20000);check();R();
+/* ---- Cloud sync (Firebase) ---- */
+const FB={apiKey:"AIzaSyChtntssf7ju9ycNgo_wdPcsImDXewP8w4",authDomain:"student-space-4a1b2.firebaseapp.com",projectId:"student-space-4a1b2",appId:"1:923424729646:web:2541192cee79ec5090cdbf"};
+const CLOUD=!FB.apiKey.startsWith('PASTE')&&typeof firebase!=='undefined';
+let USER=null,db,au,unsub=null,tm=null,msg='';
+function cloudSave(){if(!CLOUD||!USER)return;clearTimeout(tm);
+ tm=setTimeout(()=>db.collection('users').doc(USER.uid).set({s:JSON.stringify(S)}).catch(e=>toast('Could not sync: '+e.message)),600)}
+function loginView(){$('.app').classList.add('lg');
+ $('#main').innerHTML=`<div class="card" style="max-width:380px;margin:8vh auto"><div class="logo" style="padding:0 0 8px">Student<i>Space</i></div><p class="sub">Sign in to use your tasks, diary and habits on any device.</p><form id="fLogin"><p><input type="email" id="le" placeholder="Email" required style="width:100%"></p><p><input type="password" id="lp" placeholder="Password (min 6 characters)" required minlength="6" style="width:100%"></p><div class="row"><button class="btn" data-mode="in">Sign in</button><button class="btn ghost" data-mode="up">Create account</button></div></form><p><button class="btn ghost" style="width:100%" data-a="google">Continue with Google</button></p><p class="sub">${esc(msg)}</p></div>`}
+function initCloud(){
+ if(!CLOUD){R();return}
+ firebase.initializeApp(FB);au=firebase.auth();db=firebase.firestore();
+ au.onAuthStateChanged(u=>{USER=u;if(unsub){unsub();unsub=null}
+  if(!u){R();return}
+  msg='';const ref=db.collection('users').doc(u.uid);
+  unsub=ref.onSnapshot(snap=>{
+   if(snap.metadata.hasPendingWrites)return;
+   if(snap.exists&&snap.data().s){try{S=JSON.parse(snap.data().s);S.habits=S.habits||[];try{localStorage.setItem('studentspace1',JSON.stringify(S))}catch(e){}}catch(e){}}
+   else ref.set({s:JSON.stringify(S)});
+   R()},err=>toast('Sync error: '+err.message));
+ });
+}
+setInterval(check,20000);check();initCloud();
 </script>
 </body>
 </html>
