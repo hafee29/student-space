@@ -76,7 +76,6 @@ ul{list-style:none;margin:0;padding:0}
 .hc.on{background:var(--ok);border-color:var(--ok)}
 .hs{font-size:13px;text-align:center}
 @media(max-width:720px){.hrow{grid-template-columns:minmax(60px,1fr) repeat(7,28px) 40px 20px;gap:3px}.hc{width:26px;height:26px}}
-.app.lg{grid-template-columns:1fr}.app.lg nav{display:none}
 #toast{position:fixed;right:16px;top:calc(16px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:8px;z-index:9}
 #toast div{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;max-width:300px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 @media(max-width:720px){.app{grid-template-columns:1fr}nav{position:sticky;top:0;height:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);background:var(--bg);z-index:5;padding:10px}.logo,nav .sp{display:none}nav button{white-space:nowrap}main{padding:18px}.grid2{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.day{padding:3px 4px;font-size:13px}}
@@ -88,15 +87,12 @@ ul{list-style:none;margin:0;padding:0}
 <main id="main"></main>
 </div>
 <div id="toast" aria-live="polite"></div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const def=()=>({tasks:[],diary:{},rem:[],habits:[]});
 let S;try{S=JSON.parse(localStorage.getItem('studentspace1'))||def()}catch(e){S=def()}
 S.habits=S.habits||[];
-const save=()=>{try{localStorage.setItem('studentspace1',JSON.stringify(S))}catch(e){}cloudSave()};
+const save=()=>{try{localStorage.setItem('studentspace1',JSON.stringify(S))}catch(e){}};
 const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
 const today=iso(new Date());
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -177,9 +173,7 @@ stats(){
 };
 
 function R(){
- if(CLOUD&&!USER){loginView();return}
- $('.app').classList.remove('lg');
- $('#nav').innerHTML='<div class="logo">Student<i>Space</i></div>'+TABS.map(t=>`<button class="${view===t[0]?'on':''}" data-a="go" data-id="${t[0]}">${t[1]}</button>`).join('')+'<span class="sp"></span><button data-a="theme">Switch theme</button>'+(USER?'<button data-a="logout">Log out</button>':'');
+ $('#nav').innerHTML='<div class="logo">Student<i>Space</i></div>'+TABS.map(t=>`<button class="${view===t[0]?'on':''}" data-a="go" data-id="${t[0]}">${t[1]}</button>`).join('')+'<span class="sp"></span><button data-a="theme">Switch theme</button>';
  $('#main').innerHTML=V[view]();
 }
 function toast(m){const d=document.createElement('div');d.textContent=m;$('#toast').appendChild(d);setTimeout(()=>d.remove(),8000)}
@@ -197,8 +191,6 @@ const A={
  saveD:()=>{const t=$('#dt').value.trim();if(!t&&mood==null){toast('Write something or pick a mood first.');return}S.diary[sel]={text:t,mood};save();toast('Diary entry saved.');R()},
  delD:()=>{delete S.diary[sel];save();R()},
  openD:id=>{sel=id;R();window.scrollTo(0,0)},
- google:()=>au.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(x=>{msg=x.message;R()}),
- logout:()=>{try{localStorage.removeItem('studentspace1')}catch(e){}S=def();au.signOut()},
  delR:id=>{S.rem=S.rem.filter(x=>x.id!==id);save();R()},
  htog:id=>{const[i,k]=id.split('|');const h=S.habits.find(x=>x.id===i);if(h.log[k])delete h.log[k];else h.log[k]=1;save();R()},
  hdel:id=>{S.habits=S.habits.filter(x=>x.id!==id);save();R()},
@@ -207,8 +199,6 @@ const A={
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset.id)});
 document.addEventListener('change',e=>{if(e.target.id==='dd'&&e.target.value){sel=e.target.value;R()}});
 document.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
- if(id==='fLogin'){const em=$('#le').value.trim(),pw=$('#lp').value,up=e.submitter&&e.submitter.dataset.mode==='up';
-  (up?au.createUserWithEmailAndPassword(em,pw):au.signInWithEmailAndPassword(em,pw)).catch(x=>{msg=x.message;R()})}
  if(id==='fTask'){S.tasks.push({id:uid(),t:$('#tt').value.trim(),d:$('#td').value,p:+$('#tp').value,done:false,doneOn:null});save();R()}
  if(id==='fCal'){S.tasks.push({id:uid(),t:$('#ct').value.trim(),d:sel,p:1,done:false,doneOn:null});save();R()}
  if(id==='fHab'){S.habits.push({id:uid(),n:$('#hn').value.trim(),log:{}});save();R()}
@@ -217,28 +207,7 @@ document.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;
 function check(){const now=iso(new Date())+' '+new Date().toTimeString().slice(0,5);let ch=false;
  S.rem.forEach(r=>{if(!r.fired&&(r.d+' '+r.time)<=now){r.fired=true;ch=true;toast('⏰ '+r.t);try{if('Notification' in window&&Notification.permission==='granted')new Notification('Student Space',{body:r.t})}catch(e){}}});
  if(ch){save();if(view==='rem')R()}}
-/* ---- Cloud sync (Firebase) ---- */
-const FB={apiKey:"AIzaSyChtntssf7ju9ycNgo_wdPcsImDXewP8w4",authDomain:"student-space-4a1b2.firebaseapp.com",projectId:"student-space-4a1b2",appId:"1:923424729646:web:2541192cee79ec5090cdbf"};
-const CLOUD=!FB.apiKey.startsWith('PASTE')&&typeof firebase!=='undefined';
-let USER=null,db,au,unsub=null,tm=null,msg='';
-function cloudSave(){if(!CLOUD||!USER)return;clearTimeout(tm);
- tm=setTimeout(()=>db.collection('users').doc(USER.uid).set({s:JSON.stringify(S)}).catch(e=>toast('Could not sync: '+e.message)),600)}
-function loginView(){$('.app').classList.add('lg');
- $('#main').innerHTML=`<div class="card" style="max-width:380px;margin:8vh auto"><div class="logo" style="padding:0 0 8px">Student<i>Space</i></div><p class="sub">Sign in to use your tasks, diary and habits on any device.</p><form id="fLogin"><p><input type="email" id="le" placeholder="Email" required style="width:100%"></p><p><input type="password" id="lp" placeholder="Password (min 6 characters)" required minlength="6" style="width:100%"></p><div class="row"><button class="btn" data-mode="in">Sign in</button><button class="btn ghost" data-mode="up">Create account</button></div></form><p><button class="btn ghost" style="width:100%" data-a="google">Continue with Google</button></p><p class="sub">${esc(msg)}</p></div>`}
-function initCloud(){
- if(!CLOUD){R();return}
- firebase.initializeApp(FB);au=firebase.auth();db=firebase.firestore();
- au.onAuthStateChanged(u=>{USER=u;if(unsub){unsub();unsub=null}
-  if(!u){R();return}
-  msg='';const ref=db.collection('users').doc(u.uid);
-  unsub=ref.onSnapshot(snap=>{
-   if(snap.metadata.hasPendingWrites)return;
-   if(snap.exists&&snap.data().s){try{S=JSON.parse(snap.data().s);S.habits=S.habits||[];try{localStorage.setItem('studentspace1',JSON.stringify(S))}catch(e){}}catch(e){}}
-   else ref.set({s:JSON.stringify(S)});
-   R()},err=>toast('Sync error: '+err.message));
- });
-}
-setInterval(check,20000);check();initCloud();
+setInterval(check,20000);check();R();
 </script>
 </body>
 </html>
